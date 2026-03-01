@@ -1,0 +1,19 @@
+services:
+  backend:
+    build: 
+      context: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_NAME=ToyotaStockPredictor
+      - MODEL_STAGE=Staging
+      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI:-}
+      - MLFLOW_TRACKING_TOKEN=${MLFLOW_TRACKING_TOKEN:-}
+
+  frontend:
+    build: 
+      context: ./frontend
+    ports:
+      - "8080:80" # Maps port 3000 on your machine to port 80 in the container
+    depends_on:
+      - backend
