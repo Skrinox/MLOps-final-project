@@ -24,6 +24,15 @@ For this project we will be using the Toyota Stock Prices: [1980-2026 Historical
 
 # Reproducibility Instructions
 
+Setup DVC (with pipx):
+- Install pipx: `python3 -m pip install --user pipx`
+- Install DVC: `pipx install dvc`
+- Initialize DVC in the project: `dvc init` in the root directory of the project
+This will create a .dvc and .dvcignore file in the project.
+- Add the dataset to DVC: `dvc add data/toyota_stock_prices.csv`
+This will create a .dvc file for the dataset and add it to the DVC tracking.
+- we can commit the files to git.
+
 
 
 
