@@ -48,7 +48,7 @@ class StockFeatures(BaseModel):
 @app.get("/health")
 def health():
     if mlflow_model is None:
-        raise HTTPException(status_code=503, detail="Model not loaded. Check MLflow connection.")
+        raise HTTPException(status_code=503, detail="Model not loaded.")
     return {"status": "ok", "model": MODEL_NAME, "stage": MODEL_STAGE}
 
 
