@@ -33,6 +33,18 @@ This will create a .dvc and .dvcignore file in the project.
 This will create a .dvc file for the dataset and add it to the DVC tracking.
 - we can commit the files to git.
 
+To **store our data remotly** we use **Dagshub**. After creating a new repository on DagsHub (connected to our Github repo) we add the DVC remote and setup our credentials:
+```Bash
+dvc remote add origin https://dagshub.com/Skrinox/MLOps-final-project.dvc
+
+dvc remote modify origin --local auth basic
+dvc remote modify origin --local user <dagshub_username>
+dvc remote modify origin --local password <dagshub_token>
+```
+
+
+
+
 
 
 
