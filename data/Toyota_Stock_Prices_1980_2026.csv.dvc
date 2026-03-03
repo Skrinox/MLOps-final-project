@@ -1,0 +1,5 @@
+outs:
+- md5: ddf720510bee57eacac30aadd9a31250
+  size: 573641
+  hash: md5
+  path: Toyota_Stock_Prices_1980_2026.csv
