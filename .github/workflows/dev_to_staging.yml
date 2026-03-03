@@ -23,6 +23,7 @@ env:
 jobs:
   build-train-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,7 +31,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
       - name: Install dependencies
         run: |
@@ -38,12 +39,31 @@ jobs:
           pip install -r backend/requirements.txt
           pip install pytest httpx dvc pandas scikit-learn mlflow
 
-      - name: Pull Tracked Data (DVC)
+      # --- Debug info (to see remote name + config in logs) ---
+      - name: Debug DVC config
         run: |
-          dvc remote modify origin --local auth basic
-          dvc remote modify origin --local user "$DAGSHUB_USERNAME"
-          dvc remote modify origin --local password "$DAGSHUB_TOKEN"
-          dvc pull
+          echo "---- DVC version ----"
+          dvc --version
+          echo "---- DVC remotes ----"
+          dvc remote list || true
+          echo "---- .dvc/config ----"
+          cat .dvc/config || true
+
+      # --- DVC Pull ---
+      - name: Pull Tracked Data (DVC)
+        env:
+          DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+          DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+        run: |
+          # Fail early if remote 'origin' doesn't exist (clear error)
+          dvc remote list | grep -q "^origin" || (echo "ERROR: DVC remote 'origin' not found. Check .dvc/config remote name." && exit 1)
+
+          dvc remote modify --local origin auth basic
+          dvc remote modify --local origin user "$DAGSHUB_USERNAME"
+          dvc remote modify --local origin password "$DAGSHUB_TOKEN"
+
+          # Force pulling from the remote to avoid "no default remote set"
+          dvc pull -r origin
 
       - name: Run all tests
         run: |
