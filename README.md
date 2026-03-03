@@ -33,6 +33,23 @@ With this dataset we aims to predict the closing price of Toyota stock based on 
 
 # CI/CD Explanation
 
+## Pull request to `dev` branch pipeline
+
+When a pull request is opened targeting the `dev` branch, a GitHub Actions workflow (`pr_to_dev.yml`) is automatically triggered. This pipeline ensures code quality and integration before any merge is allowed.
+
+### Pipeline Steps
+
+1. **Checkout code** : retrieves the latest code from the repository.
+2. **Set up Python 3.10** : installs the required Python version.
+3. **Install dependencies** : installs all backend dependencies from `backend/requirements.txt`.
+4. **Run unit tests** : executes unit tests located in `tests/test_unit.py`
+5. **Run integration tests** : executes integration tests in `tests/test_integration.py`
+6. **Run End-to-End Tests** : executes end-to-end tests in `tests/test_e2e.py`
+7. **Build backend docker image** : builds the backend Docker image from `./backend`
+8. **Build frontend docker image** : builds the frontend Docker image from `./frontend`
+
+> All steps must pass for the pull request to be eligible for merging into `dev`.
+
 # Model Promotion
 
 During training we log the folling information to MLflow:
