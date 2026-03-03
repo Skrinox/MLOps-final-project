@@ -1,7 +1,7 @@
 name: Dev to Staging and model promotion
 
 on:
-  push:
+  pull_request:
     branches:
       - staging
 
