@@ -1,4 +1,4 @@
-name:  Dev to staging and model promotion
+name: Dev to Staging and model promotion
 
 on:
   pull_request:
@@ -8,10 +8,16 @@ on:
 env:
   MODEL_NAME: ToyotaStockPredictor
   MODEL_STAGE: Staging
+
+  # MLflow on Dagshub (Basic Auth)
   MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
-  MLFLOW_TRACKING_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+  MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+  MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+
+  # DVC auth
   DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
   DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+
   MAE_THRESHOLD: "5.0"
 
 jobs:
@@ -30,34 +36,30 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
-          pip install pytest httpx dvc dvc-s3 pandas scikit-learn mlflow
+          pip install pytest httpx dvc pandas scikit-learn mlflow
+
+      - name: Pull Tracked Data (DVC)
+        run: |
+          dvc remote modify origin --local auth basic
+          dvc remote modify origin --local user "$DAGSHUB_USERNAME"
+          dvc remote modify origin --local password "$DAGSHUB_TOKEN"
+          dvc pull
 
       - name: Run all tests
         run: |
           python -m pytest tests/ -v
 
-      - name: 2. Pull Tracked Data (DVC)
-        # Pulls the exact data version needed for training 
-        run: |
-          dvc remote modify origin --local auth basic
-          dvc remote modify origin --local user ${{ env.DAGSHUB_USERNAME }}
-          dvc remote modify origin --local password ${{ env.DAGSHUB_TOKEN }}
-          dvc pull
-
       - name: Train and register candidate model
-        # Fulfills Steps 1 & 2 of the Required Flow 
         id: train_model
         run: |
           python ml/train.py > train_output.json
           cat train_output.json
 
+      - name: Run Automated Quality Gates
+        run: |
+          cat train_output.json | python ml/eval.py
+
       - name: Deploy automatically to staging
         run: |
-          echo "Building and deploying application to Staging environment..."
-          curl -X POST ${{ secrets.ENDER_STAGING_WEBHOOK }}
-
-      - name: Run Automated Quality Gates
-        # run automated quality gates and  if gates pass promote model to production stage 
-        run: |
-          # Pipe the output from the training script directly into the evaluation script
-          cat train_output.json | python ml/eval.py
+          echo "Trigger Render deploy (staging)..."
+          curl -X POST "${{ secrets.ENDER_STAGING_WEBHOOK }}"
