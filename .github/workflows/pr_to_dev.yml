@@ -33,11 +33,11 @@ jobs:
 
       - name: Run integration tests
         run: |
-          python -m pytest tests/test_integration.py -v || true
+          python -m pytest tests/test_integration.py -v
 
       - name: Run end-to-end tests
         run: |
-          python -m pytest tests/test_e2e.py -v || true
+          python -m pytest tests/test_e2e.py -v
 
       - name: Build backend docker image
         run: |
