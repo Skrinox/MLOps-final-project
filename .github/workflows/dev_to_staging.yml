@@ -1,0 +1,85 @@
+name: Dev to Staging and model promotion
+
+on:
+  pull_request:
+    branches:
+      - staging
+
+env:
+  MODEL_NAME: ToyotaStockPredictor
+  MODEL_STAGE: Staging
+
+  # MLflow on Dagshub (Basic Auth)
+  MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+  MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+  MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+
+  # DVC auth
+  DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+  DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+
+  MAE_THRESHOLD: "5.0"
+
+jobs:
+  build-train-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pytest httpx dvc pandas scikit-learn mlflow
+
+      # --- Debug info (to see remote name + config in logs) ---
+      - name: Debug DVC config
+        run: |
+          echo "---- DVC version ----"
+          dvc --version
+          echo "---- DVC remotes ----"
+          dvc remote list || true
+          echo "---- .dvc/config ----"
+          cat .dvc/config || true
+
+      # --- DVC Pull ---
+      - name: Pull Tracked Data (DVC)
+        env:
+          DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+          DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+        run: |
+          # Fail early if remote 'origin' doesn't exist (clear error)
+          dvc remote list | grep -q "^origin" || (echo "ERROR: DVC remote 'origin' not found. Check .dvc/config remote name." && exit 1)
+
+          dvc remote modify --local origin auth basic
+          dvc remote modify --local origin user "$DAGSHUB_USERNAME"
+          dvc remote modify --local origin password "$DAGSHUB_TOKEN"
+
+          # Force pulling from the remote to avoid "no default remote set"
+          dvc pull -r origin
+
+      - name: Run all tests
+        run: |
+          python -m pytest tests/ -v
+
+      - name: Train and register candidate model
+        id: train_model
+        run: |
+          python ml/train.py
+          cat train_output.json
+
+      - name: Run Automated Quality Gates
+        run: |
+          cat train_output.json | python ml/eval.py
+
+      - name: Deploy automatically to staging
+        run: |
+          echo "Trigger Render deploy (staging)..."
+          curl -X POST "${{ secrets.ENDER_STAGING_WEBHOOK }}"

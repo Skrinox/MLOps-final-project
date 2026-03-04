@@ -2,8 +2,11 @@ import os
 import json
 import sys
 
+from mlflow.client import MlflowClient
+
 
 MAE_THRESHOLD = float(os.getenv("MAE_THRESHOLD", "5.0"))
+MODEL_NAME = os.getenv("MODEL_NAME", "ToyotaStockPredictor")
 
 def main():
     # Read the JSON payload piped from train.py
@@ -33,6 +36,19 @@ def main():
         "run_id": data.get("run_id"),
     }
     
+    if passed and data.get("model_version"):
+        try:
+            client = MlflowClient()
+            client.transition_model_version_stage(
+                name=MODEL_NAME,
+                version=data.get("model_version"),
+                stage="Production",
+                archive_existing_versions=True
+            )
+            result["promoted_to"] = "Production"
+        except Exception as e:
+            result["promoted_to"] = "Error"
+            result["error"] = str(e)
     
     print(json.dumps(result))
     
