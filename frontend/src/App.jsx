@@ -13,8 +13,7 @@ function App() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Plus tard vous pourrez passer par env: import.meta.env.VITE_API_URL
-  const API_URL = useMemo(() => "http://127.0.0.1:8000/predict", []);
+  const API_URL = `${import.meta.env.VITE_BACKEND_URL}/predict`;
 
   const fields = [
     { key: "Open", label: "Open", hint: "e.g. 150.00", suffix: "$", step: "any" },
