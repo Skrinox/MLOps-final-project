@@ -38,11 +38,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Toyota stock predictor", lifespan=lifespan)
 
+BACKEND_URL = os.getenv("BACKEND_URL", "")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        BACKEND_URL,
     ],
     allow_credentials=True,
     allow_methods=["*"],
