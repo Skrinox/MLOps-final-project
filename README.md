@@ -61,6 +61,8 @@ The pipeline uses the following secrets and environment variables:
 
 #Model promotion is handled automatically during the `dev_to_staging.yml` pipeline. It follows a two-step process: **training & registration** and **quality gate evaluation**.
 
+# Model Promotion Process
+
 ## 1. Training and registration (`ml/train.py`)
 
 Every time the pipeline runs a new candidate model is trained and logged to **MLflow** (hosted on DagsHub) with the following information:
