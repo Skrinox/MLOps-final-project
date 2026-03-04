@@ -13,7 +13,7 @@ function App() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const API_URL = `${import.meta.env.VITE_BACKEND_URL}/predict`;
+  const API_URL = `https://mlops-final-project-i9jh.onrender.com/predict`;
 
   const fields = [
     { key: "Open", label: "Open", hint: "e.g. 150.00", suffix: "$", step: "any" },
