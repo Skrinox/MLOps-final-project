@@ -72,7 +72,7 @@ jobs:
       - name: Train and register candidate model
         id: train_model
         run: |
-          python ml/train.py > train_output.json
+          python ml/train.py
           cat train_output.json
 
       - name: Run Automated Quality Gates

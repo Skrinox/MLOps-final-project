@@ -73,6 +73,9 @@ def main():
             "r2": float(r2),
             "model_version": mv.version
         }
+        with open("train_output.json", "w") as f:
+            json.dump(out, f)
+            
         print(json.dumps(out))
 
 if __name__ == "__main__":
