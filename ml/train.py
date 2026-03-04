@@ -56,10 +56,14 @@ def main():
         mlflow.log_param("max_depth", 10)
         mlflow.log_param("data_version", os.getenv("DATA_VERSION", "dvc:unknown"))
         mlflow.log_param("git_commit", os.getenv("GIT_COMMIT", "git:unknown"))
+        
         mlflow.sklearn.log_model(model, artifact_path="model")
         
-        model_uri = f"runs:/{run.info.run_id}/model"
-        mv = mlflow.register_model(model_uri=model_uri, name=MODEL_NAME)
+        # model_uri = f"runs:/{run.info.run_id}/model"
+        # mv = mlflow.register_model(model_uri=model_uri, name=MODEL_NAME)
+        
+        model_info = mlflow.sklearn.log_model(model, artifact_path="model")
+        mv = mlflow.register_model(model_uri=model_info.model_uri, name=MODEL_NAME)
         
         # for easy retrieval from the logs in the CI/CD pipeline
         out = {
@@ -69,6 +73,9 @@ def main():
             "r2": float(r2),
             "model_version": mv.version
         }
+        with open("train_output.json", "w") as f:
+            json.dump(out, f)
+            
         print(json.dumps(out))
 
 if __name__ == "__main__":

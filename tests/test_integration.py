@@ -6,6 +6,7 @@ import pandas as pd
 from fastapi.testclient import TestClient
 from unittest.mock import patch
 from backend.app import app
+import backend.app as app_module
 
 
 class DummyPyfuncModel:
@@ -67,3 +68,41 @@ def test_quality_gate_pipeline_integration():
     assert eval_result["passed"] is True
     assert eval_result["mae"] == 2.1
     assert eval_result["model_version"] == 1
+
+client = TestClient(app)
+
+class MockModel:
+    def predict(self, df):
+        return [155.50]
+
+def test_health_check_no_model():
+    app_module.mlflow_model = None 
+    response = client.get("/health")
+    
+    assert response.status_code == 503
+    assert "Model not loaded" in response.json()["detail"]
+
+def test_health_check_with_model():
+    app_module.mlflow_model = MockModel() 
+    response = client.get("/health")
+    
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+    assert "model" in response.json()
+
+def test_predict_endpoint_success():
+    app_module.mlflow_model = MockModel() 
+    
+    payload = {
+        "Open": 150.0,
+        "High": 160.0,
+        "Low": 145.0,
+        "Volume": 1200000
+    }
+    
+    response = client.post("/predict", json=payload)
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["predicted_close_price"] == 155.50 
+    assert "model_version_stage" in data
